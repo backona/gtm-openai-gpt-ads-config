@@ -12,6 +12,11 @@ Do not edit the NEW_VERSION and VERSION_DATE fields, they will be updated automa
 ### Changed
 ### Fixed
 
+## [0.1.1] - 2026-07-01 (by @slazak)
+### Added
+### Changed
+### Fixed
+
 ## [0.1.0] - 2026-07-01 (by @slazak)
 ### Added
 - OpenAI GPT Ads Configuration GTM template to initialize the OpenAI Ads Measurement Pixel (oaiq)
