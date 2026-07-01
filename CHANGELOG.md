@@ -9,6 +9,11 @@ Do not edit the NEW_VERSION and VERSION_DATE fields, they will be updated automa
 
 ## [<NEW_VERSION>] - <VERSION_DATE>
 ### Added
+### Changed
+### Fixed
+
+## [0.1.0] - 2026-07-01 (by @slazak)
+### Added
 - OpenAI GPT Ads Configuration GTM template to initialize the OpenAI Ads Measurement Pixel (oaiq)
 - In-tag guidance for recommended trigger, Consent Mode v2 tag settings, and CSP
 - Info-level console message when debug mode is enabled (with Verbose hint for SDK logs)
