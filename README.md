@@ -1,4 +1,5 @@
-# Backona - backona.com: OpenAI GPT Ads Configuration GTM Tag Template
+# OpenAI GPT Ads Configuration GTM Tag Template
+## [Backona](https://backona.com) - backona.com
 
 Google Tag Manager template to initialize the [OpenAI Ads Measurement Pixel](https://developers.openai.com/ads/measurement-pixel) (`oaiq`) for ChatGPT ad conversion tracking. Built by [Backona](https://backona.com).
 
@@ -45,4 +46,4 @@ Details: [OpenAI CSP guidance](https://developers.openai.com/ads/measurement-pix
 
 ## Support
 
-Report bugs or request features via [GitHub Issues](https://github.com/backona/backona-gpt-ads/issues) on this repository.
+Report bugs or request features via [GitHub Issues](https://github.com/backona/gtm-openai-gpt-ads-config/issues) on this repository.

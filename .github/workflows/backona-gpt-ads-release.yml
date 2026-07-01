@@ -11,6 +11,9 @@ on:
       - .github/workflows/**
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Version, changelog, and gallery metadata
@@ -78,7 +81,13 @@ jobs:
       - name: Set gallery metadata sha to release commit
         run: |
           SHA=$(git rev-parse HEAD)
-          sed -i "s/^\(\s*sha:\s*\).*/\1$SHA/" metadata.yaml
+          sed -i "0,/^  - sha: /s/^  - sha: .*/  - sha: $SHA/" metadata.yaml
+          if grep -q 'REPLACE_WITH_COMMIT_SHA' metadata.yaml; then
+            echo "::error::metadata.yaml sha was not updated"
+            exit 1
+          fi
+          echo "Updated metadata.yaml sha to $SHA"
+          grep 'sha:' metadata.yaml
 
       - name: Git Commit/Push gallery sha
         uses: actions-x/commit@v6
