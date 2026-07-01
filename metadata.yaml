@@ -1,0 +1,11 @@
+# Community Template Gallery publishing.
+# https://developers.google.com/tag-platform/tag-manager/templates/gallery
+
+homepage: "https://backona.com"
+documentation: "https://github.com/backona/backona-gpt-ads/blob/main/README.md"
+
+versions:
+  - sha: REPLACE_WITH_COMMIT_SHA
+    changeNotes: |
+      OpenAI GPT Ads Configuration GTM template to initialize the OpenAI Ads Measurement Pixel (oaiq)
+      In-tag guidance for recommended trigger, Consent Mode v2 tag settings, and CSP
