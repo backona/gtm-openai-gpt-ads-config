@@ -11,6 +11,9 @@ on:
       - .github/workflows/**
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Version, changelog, and gallery metadata
@@ -28,6 +31,27 @@ jobs:
         run: |
           git fetch origin main
           git reset --hard origin/main
+
+      - name: Detect template.tpl changes
+        id: template
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if PREV=$(git describe --tags --abbrev=0 2>/dev/null); then
+              if git diff --name-only "$PREV" HEAD | grep -qx 'template.tpl'; then
+                echo changed=true >> $GITHUB_OUTPUT
+              else
+                echo changed=false >> $GITHUB_OUTPUT
+              fi
+            else
+              echo changed=true >> $GITHUB_OUTPUT
+            fi
+          else
+            if git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD | grep -qx 'template.tpl'; then
+              echo changed=true >> $GITHUB_OUTPUT
+            else
+              echo changed=false >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: Git Version
         id: version
@@ -76,11 +100,13 @@ jobs:
           message: Release version ${{ env.VERSION }}
 
       - name: Set gallery metadata sha to release commit
+        if: steps.template.outputs.changed == 'true'
         run: |
           SHA=$(git rev-parse HEAD)
-          sed -i "s/^\(\s*sha:\s*\).*/\1$SHA/" metadata.yaml
+          sed -i "s/^  - sha: .*/  - sha: $SHA/" metadata.yaml
 
       - name: Git Commit/Push gallery sha
+        if: steps.template.outputs.changed == 'true'
         uses: actions-x/commit@v6
         with:
           files: metadata.yaml
