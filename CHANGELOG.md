@@ -9,7 +9,7 @@ Do not edit the NEW_VERSION and VERSION_DATE fields, they will be updated automa
 
 ## [<NEW_VERSION>] - <VERSION_DATE>
 ### Fixed
-- Release workflow `metadata.yaml` sha update (match `  - sha:` line format)
+- Release workflow updates `metadata.yaml` sha only when `template.tpl` changed
 - GitHub repo URLs point to [gtm-openai-gpt-ads-config](https://github.com/backona/gtm-openai-gpt-ads-config)
 
 ## [0.1.0] - 2026-07-01 (by @slazak)
