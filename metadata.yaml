@@ -5,7 +5,7 @@ homepage: "https://backona.com"
 documentation: "https://github.com/backona/gtm-openai-gpt-ads-config/blob/main/README.md"
 
 versions:
-  - sha: 4a117a2566486b5a1a23fa857861813653a52acc
+  - sha: 872667e69985fa01f15555826f4c058c6a89cebb
     changeNotes: |
       OpenAI ChatGPT Ads Configuration GTM template to initialize the OpenAI Ads Measurement Pixel (oaiq)
       In-tag guidance for recommended trigger, Consent Mode v2 tag settings, and CSP
