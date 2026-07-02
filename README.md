@@ -1,21 +1,21 @@
-# OpenAI GPT Ads Configuration GTM Tag Template
+# OpenAI ChatGPT Ads Configuration GTM Tag Template
 ## [Backona](https://backona.com) - backona.com
 
 Google Tag Manager template to initialize the [OpenAI Ads Measurement Pixel](https://developers.openai.com/ads/measurement-pixel) (`oaiq`) for ChatGPT ad conversion tracking. Built by [Backona](https://backona.com).
 
 Release history: [CHANGELOG.md](./CHANGELOG.md).
 
-This repository publishes **OpenAI GPT Ads Configuration**, the first step in a small template family:
+This repository publishes **OpenAI ChatGPT Ads Configuration**, the first step in a small template family:
 
 | Template | Status | Purpose |
 |----------|--------|---------|
-| **OpenAI GPT Ads Configuration** | Available | Load the SDK and run `oaiq('init', …)` |
-| OpenAI GPT Ads Event | Planned | Send `oaiq('measure', …)` conversion events |
+| **OpenAI ChatGPT Ads Configuration** | Available | Load the SDK and run `oaiq('init', …)` |
+| [OpenAI ChatGPT Ads Event](https://github.com/backona/gtm-openai-gpt-ads-event) | Available | Send `oaiq('measure', …)` conversion events |
 | OpenAI GPT Ads User Data | Planned | Pass hashed user data on `init` for matching |
 
 ## Install
 
-1. Open the [Community Template Gallery](https://tagmanager.google.com/gallery) in Google Tag Manager and add **OpenAI GPT Ads Configuration**, or import this repository’s template export.
+1. Open the [Community Template Gallery](https://tagmanager.google.com/gallery) in Google Tag Manager and add **OpenAI ChatGPT Ads Configuration**, or import this repository’s template export.
 2. Create a tag using the template.
 3. Enter your **Pixel ID** from OpenAI Ads Manager → Conversions ([JavaScript Pixel docs](https://developers.openai.com/ads/measurement-pixel)).
 4. Optional: turn on **Debug mode** while you test (logs SDK activity in the browser console).

@@ -12,7 +12,7 @@ ___INFO___
   "id": "cvt_temp_public_id",
   "version": 1,
   "securityGroups": [],
-  "displayName": "OpenAI GPT Ads Configuration",
+  "displayName": "OpenAI ChatGPT Ads Configuration",
   "categories": [
     "ADVERTISING",
     "ATTRIBUTION",
@@ -93,7 +93,7 @@ ___TEMPLATE_PARAMETERS___
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
 /**
- * OpenAI GPT Ads Configuration
+ * OpenAI ChatGPT Ads Configuration
  * Loads the OpenAI Ads Measurement Pixel SDK and initializes oaiq.
  */
 const injectScript = require('injectScript');
@@ -103,7 +103,7 @@ const logToConsole = require('logToConsole');
 
 const SDK_URL = 'https://bzrcdn.openai.com/sdk/oaiq.min.js';
 const DEBUG_ACTIVATED_MESSAGE =
-  'Backona - backona.com: OpenAI GPT Ads Configuration template was activated in debug mode.\n' +
+  'Backona - backona.com: OpenAI ChatGPT Ads Configuration template was activated in debug mode.\n' +
   'OpenAI oaiq SDK logs use console.debug; set DevTools Console to Verbose to see [oaiq] messages.';
 
 const isWhitespaceChar = function(ch) {
@@ -369,7 +369,7 @@ scenarios:
 
     assertThat(oaiqCalls[1][1].debug).isEqualTo(true);
     assertApi('logToConsole').wasCalledWith(
-      'Backona - backona.com: OpenAI GPT Ads Configuration template was activated in debug mode.\n' +
+      'Backona - backona.com: OpenAI ChatGPT Ads Configuration template was activated in debug mode.\n' +
       'OpenAI oaiq SDK logs use console.debug; set DevTools Console to Verbose to see [oaiq] messages.'
     );
     assertApi('gtmOnSuccess').wasCalled();
@@ -455,6 +455,6 @@ setup: |-
 
 ___NOTES___
 
-OpenAI GPT Ads Configuration template.
+OpenAI ChatGPT Ads Configuration template.
 Trigger: Consent Initialization — All Pages.
 Tag consent (Advanced section below): ad_storage, ad_user_data, ad_personalization, analytics_storage for Consent Mode v2.
