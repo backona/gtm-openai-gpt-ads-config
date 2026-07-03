@@ -48,13 +48,86 @@ ___TEMPLATE_PARAMETERS___
     "help": "Create your Pixel ID in OpenAI Ads Manager → Conversions. See the JavaScript Pixel docs: https://developers.openai.com/ads/measurement-pixel"
   },
   {
-    "type": "CHECKBOX",
-    "name": "debug",
-    "displayName": "Debug mode",
-    "checkboxText": "Enable debug logging",
-    "simpleValueType": true,
-    "defaultValue": false,
-    "help": "Enables OpenAI SDK debug logging (debug: true in oaiq init). The template logs an info message when active; SDK [oaiq] details appear only with DevTools Console set to Verbose."
+    "type": "GROUP",
+    "name": "userDataGroup",
+    "displayName": "User data (Optional)",
+    "groupStyle": "ZIPPY_CLOSED",
+    "help": "Optional user object on oaiq init to improve conversion matching. User data is request-scoped - do not add it to event tags. See https://developers.openai.com/ads/measurement-pixel#send-user-data",
+    "subParams": [
+      {
+        "type": "TEXT",
+        "name": "userEmail",
+        "displayName": "Email",
+        "simpleValueType": true,
+        "help": "The signed-in user's email address. Helps OpenAI match ad clicks to conversions on your site. Map a user email variable when available at init."
+      },
+      {
+        "type": "SELECT",
+        "name": "userEmailFormat",
+        "displayName": "Email format",
+        "simpleValueType": true,
+        "macrosInSelect": false,
+        "defaultValue": "plain",
+        "selectItems": [
+          {
+            "value": "plain",
+            "displayValue": "Plain - hash in template"
+          },
+          {
+            "value": "sha256",
+            "displayValue": "SHA-256 (pre-hashed)"
+          }
+        ],
+        "help": "Plain: map a raw email variable (URL-encoded values such as email%40example.com are decoded only when valid %XX sequences are present); the template trims whitespace, lowercases it, and SHA-256 hashes it before sending as email_sha256. SHA-256 (pre-hashed): the value is already a lowercase 64-character hex hash and is sent as-is without URL decoding."
+      },
+      {
+        "type": "TEXT",
+        "name": "userExternalId",
+        "displayName": "External ID",
+        "simpleValueType": true,
+        "help": "A stable customer identifier from your system, such as a user ID or CRM ID. Helps OpenAI match ad clicks to conversions when email is unavailable."
+      },
+      {
+        "type": "SELECT",
+        "name": "userExternalIdFormat",
+        "displayName": "External ID format",
+        "simpleValueType": true,
+        "macrosInSelect": false,
+        "defaultValue": "plain",
+        "selectItems": [
+          {
+            "value": "plain",
+            "displayValue": "Plain - hash in template"
+          },
+          {
+            "value": "sha256",
+            "displayValue": "SHA-256 (pre-hashed)"
+          }
+        ],
+        "help": "Plain: map a raw customer ID; the template trims whitespace and SHA-256 hashes it before sending as external_id_sha256. SHA-256 (pre-hashed): the value is already a lowercase 64-character hex hash and is sent as-is."
+      },
+      {
+        "type": "TEXT",
+        "name": "userCountry",
+        "displayName": "Country",
+        "simpleValueType": true,
+        "help": "Two-letter ISO 3166-1 country code, such as US."
+      },
+      {
+        "type": "TEXT",
+        "name": "userCity",
+        "displayName": "City",
+        "simpleValueType": true,
+        "help": "City name, up to 128 characters. OpenAI trims whitespace and lowercases it."
+      },
+      {
+        "type": "TEXT",
+        "name": "userZipCode",
+        "displayName": "ZIP / postal code",
+        "simpleValueType": true,
+        "help": "Postal or ZIP code. Letters, numbers, spaces, or hyphens, up to 32 characters."
+      }
+    ]
   },
   {
     "type": "GROUP",
@@ -86,6 +159,15 @@ ___TEMPLATE_PARAMETERS___
         "displayName": "If the OpenAI GPT Ads script is blocked by your site's Content Security Policy (CSP), you may see browser console errors and no events from this pixel. Ask your developer or hosting provider to follow these instructions: https://developers.openai.com/ads/measurement-pixel#configure-a-content-security-policy"
       }
     ]
+  },
+  {
+    "type": "CHECKBOX",
+    "name": "debug",
+    "displayName": "Debug mode",
+    "checkboxText": "Enable debug logging",
+    "simpleValueType": true,
+    "defaultValue": false,
+    "help": "Enables OpenAI SDK debug logging (debug: true in oaiq init). The template logs an info message when active; SDK [oaiq] details appear only with DevTools Console set to Verbose."
   }
 ]
 
@@ -100,11 +182,17 @@ const injectScript = require('injectScript');
 const createQueue = require('createQueue');
 const copyFromWindow = require('copyFromWindow');
 const logToConsole = require('logToConsole');
+const sha256 = require('sha256');
 
 const SDK_URL = 'https://bzrcdn.openai.com/sdk/oaiq.min.js';
 const DEBUG_ACTIVATED_MESSAGE =
   'Backona - backona.com: OpenAI ChatGPT Ads Configuration template was activated in debug mode.\n' +
   'OpenAI oaiq SDK logs use console.debug; set DevTools Console to Verbose to see [oaiq] messages.';
+const INVALID_PRE_HASHED_EMAIL_MESSAGE =
+  'Backona - backona.com: Email format is SHA-256 (pre-hashed), but the value is not a valid 64-character hex hash.';
+const INVALID_PRE_HASHED_EXTERNAL_ID_MESSAGE =
+  'Backona - backona.com: External ID format is SHA-256 (pre-hashed), but the value is not a valid 64-character hex hash.';
+const HASH_OUTPUT_OPTIONS = {outputEncoding: 'hex'};
 
 const isWhitespaceChar = function(ch) {
   return ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r';
@@ -132,14 +220,236 @@ const trimValue = function(value) {
   return text.substring(start, end + 1);
 };
 
-const buildInitConfig = function(pixelId) {
+const toLowerCaseText = function(value) {
+  return (value + '').toLowerCase();
+};
+
+const isHexSha256 = function(value) {
+  if (value.length !== 64) {
+    return false;
+  }
+  for (let i = 0; i < 64; i = i + 1) {
+    const ch = value.charAt(i);
+    const isDigit = ch >= '0' && ch <= '9';
+    const isLowerHex = ch >= 'a' && ch <= 'f';
+    const isUpperHex = ch >= 'A' && ch <= 'F';
+    if (!isDigit && !isLowerHex && !isUpperHex) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const normalizePreHashedValue = function(value) {
+  const trimmed = trimValue(value);
+  if (!trimmed || !isHexSha256(trimmed)) {
+    return '';
+  }
+  return toLowerCaseText(trimmed);
+};
+
+const isHexChar = function(ch) {
+  const isDigit = ch >= '0' && ch <= '9';
+  const isLowerHex = ch >= 'a' && ch <= 'f';
+  const isUpperHex = ch >= 'A' && ch <= 'F';
+  return isDigit || isLowerHex || isUpperHex;
+};
+
+const HEX_DIGITS = '0123456789abcdef';
+
+const hexDigitToNumber = function(ch) {
+  const idx = HEX_DIGITS.indexOf(toLowerCaseText(ch));
+  if (idx < 0) {
+    return 0;
+  }
+  return idx;
+};
+
+const PRINTABLE_ASCII =
+  ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+
+const hexPairToChar = function(hex) {
+  const code = hexDigitToNumber(hex.charAt(0)) * 16 + hexDigitToNumber(hex.charAt(1));
+  if (code < 32 || code > 126) {
+    return '%' + hex;
+  }
+  return PRINTABLE_ASCII.charAt(code - 32);
+};
+
+const needsUrlDecoding = function(value) {
+  for (let i = 0; i < value.length; i = i + 1) {
+    if (value.charAt(i) === '%' && i + 2 < value.length) {
+      const hex = value.substring(i + 1, i + 3);
+      if (isHexChar(hex.charAt(0)) && isHexChar(hex.charAt(1))) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+const decodeUrlEncodedValue = function(value) {
+  if (!needsUrlDecoding(value)) {
+    return value;
+  }
+  let decoded = '';
+  let i = 0;
+  while (i < value.length) {
+    if (value.charAt(i) === '%' && i + 2 < value.length) {
+      const hex = value.substring(i + 1, i + 3);
+      if (isHexChar(hex.charAt(0)) && isHexChar(hex.charAt(1))) {
+        decoded = decoded + hexPairToChar(hex);
+        i = i + 3;
+        continue;
+      }
+    }
+    decoded = decoded + value.charAt(i);
+    i = i + 1;
+  }
+  return decoded;
+};
+
+const preparePlainEmail = function(value) {
+  return toLowerCaseText(decodeUrlEncodedValue(trimValue(value)));
+};
+
+const warnInvalidPreHashedValue = function(message) {
+  if (data.debug === true) {
+    logToConsole(message);
+  }
+};
+
+const buildInitConfig = function(pixelId, user) {
   const config = {
     pixelId: pixelId
   };
   if (data.debug === true) {
     config.debug = true;
   }
+  if (user) {
+    config.user = user;
+  }
   return config;
+};
+
+const addPlainUserField = function(user, key, value, onFieldAdded) {
+  const trimmed = trimValue(value);
+  if (trimmed) {
+    user[key] = trimmed;
+    onFieldAdded();
+  }
+};
+
+const buildUserData = function(onComplete, onFailure) {
+  const user = {};
+  const hashJobs = [];
+  let hasUserFields = false;
+
+  const markUserField = function() {
+    hasUserFields = true;
+  };
+
+  const queueHashJob = function(rawValue, targetKey, preparePlain) {
+    const trimmed = trimValue(rawValue);
+    if (!trimmed) {
+      return;
+    }
+    hashJobs.push({
+      input: preparePlain(trimmed),
+      targetKey: targetKey
+    });
+  };
+
+  const queueHashedField = function(rawValue, targetKey, format, preparePlain, invalidPreHashedMessage) {
+    const trimmed = trimValue(rawValue);
+    if (!trimmed) {
+      return;
+    }
+    if (format === 'sha256') {
+      const normalized = normalizePreHashedValue(trimmed);
+      if (normalized) {
+        user[targetKey] = normalized;
+      } else {
+        user[targetKey] = trimmed;
+        warnInvalidPreHashedValue(invalidPreHashedMessage);
+      }
+      markUserField();
+      return;
+    }
+    queueHashJob(trimmed, targetKey, preparePlain);
+  };
+
+  queueHashedField(
+    data.userEmail,
+    'email_sha256',
+    data.userEmailFormat,
+    preparePlainEmail,
+    INVALID_PRE_HASHED_EMAIL_MESSAGE
+  );
+  queueHashedField(
+    data.userExternalId,
+    'external_id_sha256',
+    data.userExternalIdFormat,
+    function(value) {
+      return trimValue(value);
+    },
+    INVALID_PRE_HASHED_EXTERNAL_ID_MESSAGE
+  );
+  addPlainUserField(user, 'country', data.userCountry, markUserField);
+  addPlainUserField(user, 'city', data.userCity, markUserField);
+  addPlainUserField(user, 'zip_code', data.userZipCode, markUserField);
+
+  if (hashJobs.length === 0) {
+    onComplete(hasUserFields ? user : undefined);
+    return;
+  }
+
+  let hashFailed = false;
+
+  const runHashJobs = function(jobIndex) {
+    if (hashFailed) {
+      return;
+    }
+    if (jobIndex >= hashJobs.length) {
+      onComplete(hasUserFields ? user : undefined);
+      return;
+    }
+
+    const job = hashJobs[jobIndex];
+    sha256(job.input, function(digest) {
+      if (hashFailed) {
+        return;
+      }
+      user[job.targetKey] = toLowerCaseText(digest);
+      markUserField();
+      runHashJobs(jobIndex + 1);
+    }, function() {
+      hashFailed = true;
+      onFailure();
+    }, HASH_OUTPUT_OPTIONS);
+  };
+
+  runHashJobs(0);
+};
+
+const runInit = function(initConfig) {
+  const oaiq = createQueue('oaiq');
+
+  if (data.debug === true) {
+    logToConsole(DEBUG_ACTIVATED_MESSAGE);
+  }
+
+  oaiq('init', initConfig);
+
+  injectScript(SDK_URL, function() {
+    const liveOaiq = copyFromWindow('oaiq');
+    if (liveOaiq) {
+      liveOaiq('init', initConfig);
+    }
+    data.gtmOnSuccess();
+  }, function() {
+    data.gtmOnFailure();
+  });
 };
 
 const pixelId = trimValue(data.pixelId);
@@ -153,21 +463,8 @@ if (!copyFromWindow('oaiq')) {
   createQueue('oaiq');
 }
 
-const oaiq = createQueue('oaiq');
-const initConfig = buildInitConfig(pixelId);
-
-if (data.debug === true) {
-  logToConsole(DEBUG_ACTIVATED_MESSAGE);
-}
-
-oaiq('init', initConfig);
-
-injectScript(SDK_URL, function() {
-  const liveOaiq = copyFromWindow('oaiq');
-  if (liveOaiq) {
-    liveOaiq('init', initConfig);
-  }
-  data.gtmOnSuccess();
+buildUserData(function(user) {
+  runInit(buildInitConfig(pixelId, user));
 }, function() {
   data.gtmOnFailure();
 });
@@ -446,6 +743,356 @@ scenarios:
     assertThat(createQueueCalls).isEqualTo(1);
     assertThat(oaiqCalls.length).isEqualTo(2);
     assertThat(oaiqCalls[1][0]).isEqualTo('init');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: includes pre-hashed user data on init
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_user_data',
+      debug: false,
+      userEmail: 'B4C9A289323B21A01C3E940F150EB9B8C542587F1ABFD8F0E1CC1FFC5E475514',
+      userEmailFormat: 'sha256',
+      userCountry: 'US',
+      userCity: 'San Francisco',
+      userZipCode: '94107'
+    });
+
+    assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514');
+    assertThat(oaiqCalls[1][1].user.country).isEqualTo('US');
+    assertThat(oaiqCalls[1][1].user.city).isEqualTo('San Francisco');
+    assertThat(oaiqCalls[1][1].user.zip_code).isEqualTo('94107');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: hashes plain email before init
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('sha256', function(input, onSuccess) {
+      assertThat(input).isEqualTo('email@example.com');
+      onSuccess('abc123def4567890abc123def4567890abc123def4567890abc123def4567890');
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_hash_email',
+      debug: false,
+      userEmail: '  Email@Example.com  ',
+      userEmailFormat: 'plain'
+    });
+
+    assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('abc123def4567890abc123def4567890abc123def4567890abc123def4567890');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: fails when user data hashing fails
+  code: |-
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function() {
+      return undefined;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('sha256', function(input, onSuccess, onFailure) {
+      onFailure();
+    });
+    mock('injectScript', function() {});
+
+    runCode({
+      pixelId: 'px_hash_fail',
+      debug: false,
+      userExternalId: 'customer_123',
+      userExternalIdFormat: 'plain'
+    });
+
+    assertApi('gtmOnFailure').wasCalled();
+    assertApi('injectScript').wasNotCalled();
+- name: decodes url encoded plain email before hashing
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('sha256', function(input, onSuccess) {
+      assertThat(input).isEqualTo('email@example.com');
+      onSuccess('abc123def4567890abc123def4567890abc123def4567890abc123def4567890');
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_url_email',
+      debug: false,
+      userEmail: 'email%40example.com',
+      userEmailFormat: 'plain'
+    });
+
+    assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('abc123def4567890abc123def4567890abc123def4567890abc123def4567890');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: skips url decoding for already plain email
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('sha256', function(input, onSuccess) {
+      assertThat(input).isEqualTo('sale%off@example.com');
+      onSuccess('abc123def4567890abc123def4567890abc123def4567890abc123def4567890');
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_plain_email',
+      debug: false,
+      userEmail: 'Sale%Off@Example.com',
+      userEmailFormat: 'plain'
+    });
+
+    assertApi('gtmOnSuccess').wasCalled();
+- name: skips url decoding for pre-hashed email format
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_prehashed_url_literal',
+      debug: false,
+      userEmail: 'email%40example.com',
+      userEmailFormat: 'sha256'
+    });
+
+    assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('email%40example.com');
+    assertApi('sha256').wasNotCalled();
+    assertApi('logToConsole').wasNotCalled();
+    assertApi('gtmOnSuccess').wasCalled();
+- name: logs when pre-hashed email is invalid in debug mode
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_bad_email_hash',
+      debug: true,
+      userEmail: 'not-a-valid-hash',
+      userEmailFormat: 'sha256',
+      userCountry: 'US'
+    });
+
+    assertApi('logToConsole').wasCalledWith(
+      'Backona - backona.com: Email format is SHA-256 (pre-hashed), but the value is not a valid 64-character hex hash.'
+    );
+    assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('not-a-valid-hash');
+    assertThat(oaiqCalls[1][1].user.country).isEqualTo('US');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: passes through invalid pre-hashed email without debug log
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_bad_email_hash_silent',
+      debug: false,
+      userEmail: 'not-a-valid-hash',
+      userEmailFormat: 'sha256'
+    });
+
+    assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('not-a-valid-hash');
+    assertApi('logToConsole').wasNotCalled();
+    assertApi('gtmOnSuccess').wasCalled();
+- name: logs when pre-hashed external id is invalid in debug mode
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_bad_external_hash',
+      debug: true,
+      userExternalId: 'customer_123',
+      userExternalIdFormat: 'sha256'
+    });
+
+    assertApi('logToConsole').wasCalledWith(
+      'Backona - backona.com: External ID format is SHA-256 (pre-hashed), but the value is not a valid 64-character hex hash.'
+    );
+    assertThat(oaiqCalls[1][1].user.external_id_sha256).isEqualTo('customer_123');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: omits empty email from user object
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_empty_email',
+      debug: false,
+      userEmail: '   ',
+      userEmailFormat: 'plain'
+    });
+
+    assertThat(oaiqCalls[1][1].user).isUndefined();
+    assertApi('sha256').wasNotCalled();
+    assertApi('gtmOnSuccess').wasCalled();
+- name: omits user object when all user fields are empty
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_empty_user',
+      debug: false,
+      userEmail: '',
+      userExternalId: '   ',
+      userCountry: '',
+      userCity: ' ',
+      userZipCode: ''
+    });
+
+    assertThat(oaiqCalls[1][1].user).isUndefined();
+    assertApi('sha256').wasNotCalled();
+    assertApi('logToConsole').wasNotCalled();
     assertApi('gtmOnSuccess').wasCalled();
 setup: |-
   const mockData = {

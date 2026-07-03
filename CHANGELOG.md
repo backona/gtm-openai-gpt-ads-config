@@ -9,8 +9,7 @@ Do not edit the NEW_VERSION and VERSION_DATE fields, they will be updated automa
 
 ## [<NEW_VERSION>] - <VERSION_DATE>
 ### Added
-### Changed
-### Fixed
+- Optional user data on oaiq init (email, external ID, country, city, ZIP) with plain or pre-hashed SHA-256 input for hash fields
 
 ## [0.2.0] - 2026-07-02 (by @slazak)
 ### Changed
