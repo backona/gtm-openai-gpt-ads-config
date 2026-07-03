@@ -5,6 +5,10 @@ homepage: "https://backona.com"
 documentation: "https://github.com/backona/gtm-openai-gpt-ads-config/blob/main/README.md"
 
 versions:
+  - sha: fac716d91e64172d9e12355b0d15095c44e2789e
+    changeNotes: |
+      ### Added
+      - Optional user data on oaiq init (email, external ID, country, city, ZIP) with plain or pre-hashed SHA-256 input for hash fields
   - sha: 872667e69985fa01f15555826f4c058c6a89cebb
     changeNotes: |
       OpenAI ChatGPT Ads Configuration GTM template to initialize the OpenAI Ads Measurement Pixel (oaiq)
