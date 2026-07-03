@@ -99,18 +99,43 @@ jobs:
           files: CHANGELOG.md
           message: Release version ${{ env.VERSION }}
 
-      - name: Set gallery metadata sha to release commit
+      - name: Prepend gallery metadata version
         if: steps.template.outputs.changed == 'true'
         run: |
           SHA=$(git rev-parse HEAD)
-          sed -i "s/^  - sha: .*/  - sha: $SHA/" metadata.yaml
+          NOTES=$(awk "/## \[$VERSION\]/{p=1;next} /## \[/{p=0} p" CHANGELOG.md)
 
-      - name: Git Commit/Push gallery sha
+          {
+            echo "  - sha: $SHA"
+            echo "    changeNotes: |"
+            if [ -n "$NOTES" ]; then
+              while IFS= read -r line || [ -n "$line" ]; do
+                if [ -z "$line" ]; then
+                  echo ""
+                else
+                  echo "      $line"
+                fi
+              done <<< "$NOTES"
+            fi
+          } > /tmp/new_gallery_version.yaml
+
+          awk '
+            /^versions:/ {
+              print
+              while ((getline line < "/tmp/new_gallery_version.yaml") > 0) print line
+              close("/tmp/new_gallery_version.yaml")
+              next
+            }
+            { print }
+          ' metadata.yaml > metadata.yaml.new
+          mv metadata.yaml.new metadata.yaml
+
+      - name: Git Commit/Push gallery metadata
         if: steps.template.outputs.changed == 'true'
         uses: actions-x/commit@v6
         with:
           files: metadata.yaml
-          message: Update metadata.yaml sha for gallery (${{ env.VERSION }})
+          message: Prepend gallery version to metadata.yaml (${{ env.VERSION }})
 
       - name: Tag and Release
         uses: avakar/tag-and-release@v1
