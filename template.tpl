@@ -138,12 +138,12 @@ ___TEMPLATE_PARAMETERS___
       {
         "type": "LABEL",
         "name": "triggerHelpLabel",
-        "displayName": "Trigger: Consent Initialization — All Pages (loads oaiq early, before event tags)."
+        "displayName": "Trigger: Initialization — All Pages (loads oaiq early, before event tags)."
       },
       {
         "type": "LABEL",
         "name": "consentHelpLabel",
-        "displayName": "Tag consent settings (Advanced section below): for Consent Mode v2, require ad_storage, ad_user_data, ad_personalization, and analytics_storage."
+        "displayName": "Tag consent settings (Advanced section below): for Consent Mode v2, consider ad_storage, ad_user_data, ad_personalization, and analytics_storage."
       }
     ]
   },
@@ -1103,5 +1103,5 @@ setup: |-
 ___NOTES___
 
 OpenAI ChatGPT Ads Configuration template.
-Trigger: Consent Initialization — All Pages.
-Tag consent (Advanced section below): ad_storage, ad_user_data, ad_personalization, analytics_storage for Consent Mode v2.
+Trigger: Initialization — All Pages.
+Tag consent (Advanced section below): consider ad_storage, ad_user_data, ad_personalization, analytics_storage for Consent Mode v2.
