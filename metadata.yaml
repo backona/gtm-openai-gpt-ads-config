@@ -5,6 +5,10 @@ homepage: "https://backona.com"
 documentation: "https://github.com/backona/gtm-openai-gpt-ads-config/blob/main/README.md"
 
 versions:
+  - sha: 23b35568271c5bd302b6d61d3dde06b05e5dba1c
+    changeNotes: |
+      ### Changed
+      - Init payload preview console logs only when debug mode is enabled; undefined or empty user values are omitted from the init payload
   - sha: 9f4415747f34df5e2db3a0850af64a8c71e8a623
     changeNotes: |
       ### Added
