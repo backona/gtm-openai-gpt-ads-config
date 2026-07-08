@@ -5,6 +5,10 @@ homepage: "https://backona.com"
 documentation: "https://github.com/backona/gtm-openai-gpt-ads-config/blob/main/README.md"
 
 versions:
+  - sha: 46b7f2d68bd47cdb4391f2cddf65bcdd723736a3
+    changeNotes: |
+      ### Changed
+      - User data field layout and labels: format dropdowns above value fields, renamed plain/pre-hashed options, and per-field optional guidance in help text
   - sha: 4d4d4d88988c53dd42666c33aefd6c11def661c4
     changeNotes: |
       ### Changed
