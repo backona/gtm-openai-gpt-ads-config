@@ -55,13 +55,6 @@ ___TEMPLATE_PARAMETERS___
     "help": "Optional user object on oaiq init to improve conversion matching. User data is request-scoped - do not add it to event tags. See https://developers.openai.com/ads/measurement-pixel#send-user-data",
     "subParams": [
       {
-        "type": "TEXT",
-        "name": "userEmail",
-        "displayName": "Email",
-        "simpleValueType": true,
-        "help": "The signed-in user's email address. Helps OpenAI match ad clicks to conversions on your site. Map a user email variable when available at init."
-      },
-      {
         "type": "SELECT",
         "name": "userEmailFormat",
         "displayName": "Email format",
@@ -71,21 +64,21 @@ ___TEMPLATE_PARAMETERS___
         "selectItems": [
           {
             "value": "plain",
-            "displayValue": "Plain - hash in template"
+            "displayValue": "Plain (hash it in template)"
           },
           {
             "value": "sha256",
-            "displayValue": "SHA-256 (pre-hashed)"
+            "displayValue": "SHA-256 (already pre-hashed)"
           }
         ],
-        "help": "Plain: map a raw email variable (URL-encoded values such as email%40example.com are decoded only when valid %XX sequences are present); the template trims whitespace, lowercases it, and SHA-256 hashes it before sending as email_sha256. SHA-256 (pre-hashed): the value is already a lowercase 64-character hex hash and is sent as-is without URL decoding."
+        "help": "Plain (hash it in template) - map a raw email variable (URL-encoded values such as email%40example.com are decoded only when valid %XX sequences are present); the template trims whitespace, lowercases it, and SHA-256 hashes it before sending as email_sha256. SHA-256 (already pre-hashed) - the value is already a lowercase 64-character hex hash and is sent as-is without URL decoding."
       },
       {
         "type": "TEXT",
-        "name": "userExternalId",
-        "displayName": "External ID",
+        "name": "userEmail",
+        "displayName": "Email",
         "simpleValueType": true,
-        "help": "A stable customer identifier from your system, such as a user ID or CRM ID. Helps OpenAI match ad clicks to conversions when email is unavailable."
+        "help": "The signed-in user's email address. Helps OpenAI match ad clicks to conversions on your site. Map a user email variable when available at init. This field is optional."
       },
       {
         "type": "SELECT",
@@ -97,35 +90,42 @@ ___TEMPLATE_PARAMETERS___
         "selectItems": [
           {
             "value": "plain",
-            "displayValue": "Plain - hash in template"
+            "displayValue": "Plain (hash it in template)"
           },
           {
             "value": "sha256",
-            "displayValue": "SHA-256 (pre-hashed)"
+            "displayValue": "SHA-256 (already pre-hashed)"
           }
         ],
-        "help": "Plain: map a raw customer ID; the template trims whitespace and SHA-256 hashes it before sending as external_id_sha256. SHA-256 (pre-hashed): the value is already a lowercase 64-character hex hash and is sent as-is."
+        "help": "Plain (hash it in template) - map a raw customer ID; the template trims whitespace and SHA-256 hashes it before sending as external_id_sha256. SHA-256 (already pre-hashed) - the value is already a lowercase 64-character hex hash and is sent as-is."
+      },
+      {
+        "type": "TEXT",
+        "name": "userExternalId",
+        "displayName": "External ID",
+        "simpleValueType": true,
+        "help": "A stable customer identifier from your system, such as a user ID or CRM ID. Helps OpenAI match ad clicks to conversions when email is unavailable. This field is optional."
       },
       {
         "type": "TEXT",
         "name": "userCountry",
         "displayName": "Country",
         "simpleValueType": true,
-        "help": "Two-letter ISO 3166-1 country code, such as US."
+        "help": "Two-letter ISO 3166-1 country code, such as US. This field is optional."
       },
       {
         "type": "TEXT",
         "name": "userCity",
         "displayName": "City",
         "simpleValueType": true,
-        "help": "City name, up to 128 characters. OpenAI trims whitespace and lowercases it."
+        "help": "City name, up to 128 characters. OpenAI trims whitespace and lowercases it. This field is optional."
       },
       {
         "type": "TEXT",
         "name": "userZipCode",
         "displayName": "ZIP / postal code",
         "simpleValueType": true,
-        "help": "Postal or ZIP code. Letters, numbers, spaces, or hyphens, up to 32 characters."
+        "help": "Postal or ZIP code. Letters, numbers, spaces, or hyphens, up to 32 characters. This field is optional."
       }
     ]
   },
