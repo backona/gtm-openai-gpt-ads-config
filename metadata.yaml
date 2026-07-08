@@ -5,6 +5,10 @@ homepage: "https://backona.com"
 documentation: "https://github.com/backona/gtm-openai-gpt-ads-config/blob/main/README.md"
 
 versions:
+  - sha: 9f4415747f34df5e2db3a0850af64a8c71e8a623
+    changeNotes: |
+      ### Added
+      - GTM preview logs the resolved init payload to the console when the configuration tag fires successfully
   - sha: 46b7f2d68bd47cdb4391f2cddf65bcdd723736a3
     changeNotes: |
       ### Changed
