@@ -16,7 +16,7 @@ This repository publishes **OpenAI ChatGPT Ads Configuration**, the first step i
 1. Open the [Community Template Gallery](https://tagmanager.google.com/gallery) in Google Tag Manager and add **OpenAI ChatGPT Ads Configuration**, or import this repository’s template export.
 2. Create a tag using the template.
 3. Enter your **Pixel ID** from OpenAI Ads Manager → Conversions ([JavaScript Pixel docs](https://developers.openai.com/ads/measurement-pixel)).
-4. Optional: expand **User data (Optional)** to pass email, external ID, country, city, or ZIP on init for conversion matching ([Send user data](https://developers.openai.com/ads/measurement-pixel#send-user-data)). For email and external ID, choose **Plain - hash in template** or **SHA-256 (pre-hashed)**.
+4. Optional: expand **User data (Optional)** to pass email, external ID, country, city, or ZIP on init for conversion matching ([Send user data](https://developers.openai.com/ads/measurement-pixel#send-user-data)). For email and external ID, choose **Plain (hash it in template)** or **SHA-256 (already pre-hashed)**.
 5. Optional: turn on **Debug mode** while you test (logs SDK activity in the browser console).
 6. Set the trigger to **Initialization - All Pages** so the pixel loads before event tags fire.
 
