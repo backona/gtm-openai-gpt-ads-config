@@ -222,6 +222,13 @@ const trimValue = function(value) {
   return text.substring(start, end + 1);
 };
 
+const hasUserInputValue = function(value) {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  return trimValue(value) !== '';
+};
+
 const toLowerCaseText = function(value) {
   return (value + '').toLowerCase();
 };
@@ -335,6 +342,9 @@ const buildInitConfig = function(pixelId, user) {
 };
 
 const logInitPreview = function(initConfig) {
+  if (data.debug !== true) {
+    return;
+  }
   const preview = {
     pixelId: initConfig.pixelId
   };
@@ -349,11 +359,11 @@ const logInitPreview = function(initConfig) {
 };
 
 const addPlainUserField = function(user, key, value, onFieldAdded) {
-  const trimmed = trimValue(value);
-  if (trimmed) {
-    user[key] = trimmed;
-    onFieldAdded();
+  if (!hasUserInputValue(value)) {
+    return;
   }
+  user[key] = trimValue(value);
+  onFieldAdded();
 };
 
 const buildUserData = function(onComplete, onFailure) {
@@ -366,10 +376,10 @@ const buildUserData = function(onComplete, onFailure) {
   };
 
   const queueHashJob = function(rawValue, targetKey, preparePlain) {
-    const trimmed = trimValue(rawValue);
-    if (!trimmed) {
+    if (!hasUserInputValue(rawValue)) {
       return;
     }
+    const trimmed = trimValue(rawValue);
     hashJobs.push({
       input: preparePlain(trimmed),
       targetKey: targetKey
@@ -377,10 +387,10 @@ const buildUserData = function(onComplete, onFailure) {
   };
 
   const queueHashedField = function(rawValue, targetKey, format, preparePlain, invalidPreHashedMessage) {
-    const trimmed = trimValue(rawValue);
-    if (!trimmed) {
+    if (!hasUserInputValue(rawValue)) {
       return;
     }
+    const trimmed = trimValue(rawValue);
     if (format === 'sha256') {
       const normalized = normalizePreHashedValue(trimmed);
       if (normalized) {
@@ -711,9 +721,7 @@ scenarios:
     runCode(mockData);
 
     assertThat(oaiqCalls[1][1].debug).isUndefined();
-    assertApi('logToConsole').wasCalledWith(
-      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
-    );
+    assertApi('logToConsole').wasNotCalled();
     assertApi('gtmOnSuccess').wasCalled();
 - name: fails when script load fails
   code: |-
@@ -952,9 +960,7 @@ scenarios:
 
     assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('email%40example.com');
     assertApi('sha256').wasNotCalled();
-    assertApi('logToConsole').wasCalledWith(
-      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
-    );
+    assertApi('logToConsole').wasNotCalled();
     assertApi('gtmOnSuccess').wasCalled();
 - name: logs when pre-hashed email is invalid in debug mode
   code: |-
@@ -1018,9 +1024,7 @@ scenarios:
     });
 
     assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('not-a-valid-hash');
-    assertApi('logToConsole').wasCalledWith(
-      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
-    );
+    assertApi('logToConsole').wasNotCalled();
     assertApi('gtmOnSuccess').wasCalled();
 - name: logs when pre-hashed external id is invalid in debug mode
   code: |-
@@ -1082,6 +1086,38 @@ scenarios:
     });
 
     assertThat(oaiqCalls[1][1].user).isUndefined();
+    assertApi('sha256').wasNotCalled();
+    assertApi('logToConsole').wasNotCalled();
+    assertApi('gtmOnSuccess').wasCalled();
+- name: omits undefined email from user object
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_undefined_email',
+      debug: false,
+      userEmailFormat: 'plain',
+      userCountry: 'US'
+    });
+
+    assertThat(oaiqCalls[1][1].user.country).isEqualTo('US');
+    assertThat(oaiqCalls[1][1].user.email_sha256).isUndefined();
     assertApi('sha256').wasNotCalled();
     assertApi('gtmOnSuccess').wasCalled();
 - name: logs resolved init payload in preview
@@ -1149,9 +1185,7 @@ scenarios:
 
     assertThat(oaiqCalls[1][1].user).isUndefined();
     assertApi('sha256').wasNotCalled();
-    assertApi('logToConsole').wasCalledWith(
-      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
-    );
+    assertApi('logToConsole').wasNotCalled();
     assertApi('gtmOnSuccess').wasCalled();
 setup: |-
   const mockData = {

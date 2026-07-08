@@ -8,9 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Do not edit the NEW_VERSION and VERSION_DATE fields, they will be updated automatically by the Github Action script.
 
 ## [<NEW_VERSION>] - <VERSION_DATE>
-### Added
 ### Changed
-### Fixed
+- Init payload preview console logs only when debug mode is enabled; undefined or empty user values are omitted from the init payload
 
 ## [1.0.3] - 2026-07-08 (by @slazak)
 ### Added

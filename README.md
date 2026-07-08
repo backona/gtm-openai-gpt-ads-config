@@ -22,7 +22,7 @@ This repository publishes **OpenAI ChatGPT Ads Configuration**, the first step i
 
 ## GTM preview
 
-In **Tag Assistant preview/debug mode**, when the configuration tag fires successfully, the preview console logs the resolved `oaiq('init', …)` payload — only fields that were actually sent (pixel ID, debug flag, and user data after hashing). These logs are not written on the live site.
+In **Tag Assistant preview/debug mode**, when **Debug mode** is enabled and the configuration tag fires successfully, the preview console logs the resolved `oaiq('init', …)` payload — only fields that were actually sent (pixel ID, debug flag, and user data after hashing). These logs are not written on the live site or when debug mode is off.
 
 ## Consent
 
