@@ -20,6 +20,10 @@ This repository publishes **OpenAI ChatGPT Ads Configuration**, the first step i
 5. Optional: turn on **Debug mode** while you test (logs SDK activity in the browser console).
 6. Set the trigger to **Initialization - All Pages** so the pixel loads before event tags fire.
 
+## GTM preview
+
+In **Tag Assistant preview/debug mode**, when the configuration tag fires successfully, the preview console logs the resolved `oaiq('init', …)` payload — only fields that were actually sent (pixel ID, debug flag, and user data after hashing). These logs are not written on the live site.
+
 ## Consent
 
 On each tag, open **Advanced settings → Consent settings** and consider these types when using [Consent Mode v2](https://support.google.com/tagmanager/answer/10718549):

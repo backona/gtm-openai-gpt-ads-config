@@ -9,8 +9,7 @@ Do not edit the NEW_VERSION and VERSION_DATE fields, they will be updated automa
 
 ## [<NEW_VERSION>] - <VERSION_DATE>
 ### Added
-### Changed
-### Fixed
+- GTM preview logs the resolved init payload to the console when the configuration tag fires successfully
 
 ## [1.0.2] - 2026-07-08 (by @slazak)
 ### Changed

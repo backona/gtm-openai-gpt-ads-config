@@ -188,6 +188,8 @@ const SDK_URL = 'https://bzrcdn.openai.com/sdk/oaiq.min.js';
 const DEBUG_ACTIVATED_MESSAGE =
   'Backona - backona.com: OpenAI ChatGPT Ads Configuration template was activated in debug mode.\n' +
   'OpenAI oaiq SDK logs use console.debug; set DevTools Console to Verbose to see [oaiq] messages.';
+const INIT_PREVIEW_PREFIX =
+  'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)';
 const INVALID_PRE_HASHED_EMAIL_MESSAGE =
   'Backona - backona.com: Email format is SHA-256 (pre-hashed), but the value is not a valid 64-character hex hash.';
 const INVALID_PRE_HASHED_EXTERNAL_ID_MESSAGE =
@@ -332,6 +334,20 @@ const buildInitConfig = function(pixelId, user) {
   return config;
 };
 
+const logInitPreview = function(initConfig) {
+  const preview = {
+    pixelId: initConfig.pixelId
+  };
+  if (initConfig.debug === true) {
+    preview.debug = true;
+  }
+  if (initConfig.user) {
+    preview.user = initConfig.user;
+  }
+  logToConsole(INIT_PREVIEW_PREFIX);
+  logToConsole(preview);
+};
+
 const addPlainUserField = function(user, key, value, onFieldAdded) {
   const trimmed = trimValue(value);
   if (trimmed) {
@@ -438,6 +454,8 @@ const runInit = function(initConfig) {
   if (data.debug === true) {
     logToConsole(DEBUG_ACTIVATED_MESSAGE);
   }
+
+  logInitPreview(initConfig);
 
   oaiq('init', initConfig);
 
@@ -693,7 +711,9 @@ scenarios:
     runCode(mockData);
 
     assertThat(oaiqCalls[1][1].debug).isUndefined();
-    assertApi('logToConsole').wasNotCalled();
+    assertApi('logToConsole').wasCalledWith(
+      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
+    );
     assertApi('gtmOnSuccess').wasCalled();
 - name: fails when script load fails
   code: |-
@@ -932,7 +952,9 @@ scenarios:
 
     assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('email%40example.com');
     assertApi('sha256').wasNotCalled();
-    assertApi('logToConsole').wasNotCalled();
+    assertApi('logToConsole').wasCalledWith(
+      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
+    );
     assertApi('gtmOnSuccess').wasCalled();
 - name: logs when pre-hashed email is invalid in debug mode
   code: |-
@@ -996,7 +1018,9 @@ scenarios:
     });
 
     assertThat(oaiqCalls[1][1].user.email_sha256).isEqualTo('not-a-valid-hash');
-    assertApi('logToConsole').wasNotCalled();
+    assertApi('logToConsole').wasCalledWith(
+      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
+    );
     assertApi('gtmOnSuccess').wasCalled();
 - name: logs when pre-hashed external id is invalid in debug mode
   code: |-
@@ -1060,6 +1084,39 @@ scenarios:
     assertThat(oaiqCalls[1][1].user).isUndefined();
     assertApi('sha256').wasNotCalled();
     assertApi('gtmOnSuccess').wasCalled();
+- name: logs resolved init payload in preview
+  code: |-
+    let liveOaiq;
+    const oaiqCalls = [];
+
+    mock('copyFromWindow', function(key) {
+      if (key === 'oaiq') return liveOaiq;
+    });
+    mock('createQueue', function() {
+      return function() {
+        oaiqCalls.push(arguments);
+      };
+    });
+    mock('injectScript', function(url, onSuccess) {
+      liveOaiq = function() {
+        oaiqCalls.push(arguments);
+      };
+      onSuccess();
+    });
+
+    runCode({
+      pixelId: 'px_preview',
+      debug: true,
+      userCountry: 'US'
+    });
+
+    assertApi('logToConsole').wasCalledWith(
+      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
+    );
+    assertThat(oaiqCalls[1][1].pixelId).isEqualTo('px_preview');
+    assertThat(oaiqCalls[1][1].debug).isEqualTo(true);
+    assertThat(oaiqCalls[1][1].user.country).isEqualTo('US');
+    assertApi('gtmOnSuccess').wasCalled();
 - name: omits user object when all user fields are empty
   code: |-
     let liveOaiq;
@@ -1092,7 +1149,9 @@ scenarios:
 
     assertThat(oaiqCalls[1][1].user).isUndefined();
     assertApi('sha256').wasNotCalled();
-    assertApi('logToConsole').wasNotCalled();
+    assertApi('logToConsole').wasCalledWith(
+      'Backona - backona.com: OpenAI ChatGPT Ads Configuration — oaiq("init", ...) payload (GTM preview)'
+    );
     assertApi('gtmOnSuccess').wasCalled();
 setup: |-
   const mockData = {
