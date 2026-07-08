@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Do not edit the NEW_VERSION and VERSION_DATE fields, they will be updated automatically by the Github Action script.
 
 ## [<NEW_VERSION>] - <VERSION_DATE>
+### Added
+### Changed
+### Fixed
+
+## [1.0.2] - 2026-07-08 (by @slazak)
 ### Changed
 - User data field layout and labels: format dropdowns above value fields, renamed plain/pre-hashed options, and per-field optional guidance in help text
 
